@@ -1,5 +1,5 @@
 set -x
-MYRESOURCEGROUP=ScaledRiskARM
+MYRESOURCEGROUP=ScaledRiskarm
 #Create Resource Group 
 az group create --name $MYRESOURCEGROUP --location "West Europe"
 

@@ -45,7 +45,7 @@
       "metadata": {
         "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
       },
-      "defaultValue": "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/101-hdinsight-linux-with-edge-node"
+      "defaultValue": "https://raw.githubusercontent.com/pmillart/hdinsight/master"
     },
     "_artifactsLocationSasToken": {
       "type": "securestring",
@@ -79,9 +79,38 @@
   "variables": {
     "clusterStorageAccountName": "[concat(parameters('clusterName'),'store')]",
     "storageAccountType": "Standard_LRS",
-    "applicationName": "frontedgenode"
+    "applicationName": "frontedgenode",
+    "vNet": {
+      "name": "[concat(parameters('clusterName'),'-vnet')]",
+      "addressSpacePrefix": "10.10.0.0/16",
+      "subnetName": "subnet1",
+      "subnetPrefix": "10.10.0.0/24",
+      "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(parameters('clusterName'),'-vnet'))]",
+      "subnet": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(parameters('clusterName'),'-vnet')), '/subnets/subnet1')]"
+    }
   },
   "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('vNet').name]",
+      "apiVersion": "2016-03-30",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vNet').addressSpacePrefix]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('vNet').subnetName]",
+            "properties": {
+              "addressPrefix": "[variables('vNet').subnetPrefix]"
+            }
+          }
+        ]
+      }
+    },
     {
       "type": "Microsoft.Storage/storageAccounts",
       "name": "[variables('clusterStorageAccountName')]",
@@ -99,7 +128,8 @@
       "location": "[parameters('location')]",
       "apiVersion": "2015-03-01-preview",
       "dependsOn": [
-        "[concat('Microsoft.Storage/storageAccounts/',variables('clusterStorageAccountName'))]"
+        "[concat('Microsoft.Storage/storageAccounts/',variables('clusterStorageAccountName'))]",
+        "[concat('Microsoft.Network/virtualNetworks/',variables('vNet').name)]"
       ],
       "tags": {},
       "properties": {

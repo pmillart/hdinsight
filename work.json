@@ -1,0 +1,15 @@
+ "resources":[
+    {
+        "apiVersion":"2017-05-10",
+        "name":"pid-9aa77d5f-a637-4e77-a3ce-51e9f7048fbb",
+        "type":"Microsoft.Resources/deploymentd",
+        "properties":{
+            "mode":"incremental",
+            "template":{
+                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                "contentVersion":"1.0.0.0",
+                "resources": []
+            }
+        }
+    }
+]
