@@ -66,7 +66,7 @@
       "metadata": {
         "description": "A script action you can run on the empty node to install or configure additiona software."
       },
-      "defaultValue": "EmptyNodeSetup.sh"
+      "defaultValue": "NodeSetup.sh"
     },
     "location": {
       "type": "string",
@@ -82,194 +82,180 @@
     "applicationName": "frontedgenode",
     "vNet": {
       "name": "[concat(parameters('clusterName'),'-vnet')]",
-      "addressSpacePrefix": "10.10.0.0/16",
+      "addressSpacePrefix": "10.0.0.0/16",
       "subnetName": "subnet1",
-      "subnetPrefix": "10.10.0.0/24",
+      "subnetPrefix": "10.0.0.0/24",
       "id": "[resourceId('Microsoft.Network/virtualNetworks', concat(parameters('clusterName'),'-vnet'))]",
       "subnet": "[concat(resourceId('Microsoft.Network/virtualNetworks', concat(parameters('clusterName'),'-vnet')), '/subnets/subnet1')]"
     }
   },
-  "resources":[
+  "resources": [
     {
-        "apiVersion":"2017-05-10",
-        "name":"pid-9aa77d5f-a637-4e77-a3ce-51e9f7048fbb",
-        "type":"Microsoft.Resources/deploymentd",
-        "properties":{
-            "mode":"incremental",
-            "template":{
-                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                "contentVersion":"1.0.0.0",
-                "resources": [
-                  {
-                    "type": "Microsoft.Network/virtualNetworks",
-                    "name": "[variables('vNet').name]",
-                    "apiVersion": "2016-03-30",
-                    "location": "[parameters('location')]",
-                    "properties": {
-                      "addressSpace": {
-                        "addressPrefixes": [
-                          "[variables('vNet').addressSpacePrefix]"
-                        ]
-                      },
-                      "subnets": [
-                        {
-                          "name": "[variables('vNet').subnetName]",
-                          "properties": {
-                            "addressPrefix": "[variables('vNet').subnetPrefix]"
-                          }
-                        }
-                      ]
-                    }
-                  },
-                  {
-                    "type": "Microsoft.Storage/storageAccounts",
-                    "name": "[variables('clusterStorageAccountName')]",
-                    "apiVersion": "2016-01-01",
-                    "location": "[parameters('location')]",
-                    "sku": {
-                      "name": "[variables('storageAccountType')]"
-                    },
-                    "kind": "Storage",
-                    "properties": {}
-                  },
-                  {
-                    "name": "[parameters('clusterName')]",
-                    "type": "Microsoft.HDInsight/clusters",
-                    "location": "[parameters('location')]",
-                    "apiVersion": "2015-03-01-preview",
-                    "dependsOn": [
-                      "[concat('Microsoft.Network/virtualNetworks/',variables('vNet').name)]",
-                      "[concat('Microsoft.Storage/storageAccounts/',variables('clusterStorageAccountName'))]"
-                    ],
-                    "tags": {},
-                    "properties": {
-                      "clusterVersion": "3.6",
-                      "osType": "Linux",
-                      "clusterDefinition": {
-                        "kind": "hbase",
-                        "configurations": {
-                          "gateway": {
-                            "restAuthCredential.isEnabled": true,
-                            "restAuthCredential.username": "[parameters('clusterLoginUserName')]",
-                            "restAuthCredential.password": "[parameters('clusterLoginPassword')]"
-                          }
-                        }
-                      },
-                      "storageProfile": {
-                        "storageaccounts": [
-                          {
-                            "name": "[replace(replace(reference(resourceId('Microsoft.Storage/storageAccounts', variables('clusterStorageAccountName')), '2016-01-01').primaryEndpoints.blob,'https://',''),'/','')]",
-                            "isDefault": true,
-                            "container": "[parameters('clusterName')]",
-                            "key": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('clusterStorageAccountName')), '2016-01-01').keys[0].value]"
-                          }
-                        ]
-                      },
-                      "computeProfile": {
-                        "roles": [
-                          {
-                            "name": "headnode",
-                            "targetInstanceCount": "2",
-                            "hardwareProfile": {
-                              "vmSize": "Standard_D3_v2"
-                            },
-                            "osProfile": {
-                              "linuxOperatingSystemProfile": {
-                                "username": "[parameters('sshUserName')]",
-                                "password": "[parameters('sshPassword')]",
-                                "sshProfile": {
-                                  "publicKeys": [
-                                    {
-                                      "certificateData": "[parameters('sshPublicKey')]"
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          },
-                          {
-                            "name": "workernode",
-                            "targetInstanceCount": 2,
-                            "hardwareProfile": {
-                              "vmSize": "Standard_D3_v2"
-                            },
-                            "osProfile": {
-                              "linuxOperatingSystemProfile": {
-                                "username": "[parameters('sshUserName')]",
-                                "password": "[parameters('sshPassword')]",
-                                "sshProfile": {
-                                  "publicKeys": [
-                                    {
-                                      "certificateData": "[parameters('sshPublicKey')]"
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          },
-                          {
-                            "name": "zookeepernode",
-                            "targetInstanceCount": 3,
-                            "hardwareProfile": {
-                              "vmSize": "Standard_A3"
-                            },
-                            "osProfile": {
-                              "linuxOperatingSystemProfile": {
-                                "username": "[parameters('sshUserName')]",
-                                "password": "[parameters('sshPassword')]",
-                                "sshProfile": {
-                                  "publicKeys": [
-                                    {
-                                      "certificateData": "[parameters('sshPublicKey')]"
-                                    }
-                                  ]
-                                }
-                              }
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  },
-                  {
-                    "name": "[concat(parameters('clusterName'),'/', variables('applicationName'))]",
-                    "type": "Microsoft.HDInsight/clusters/applications",
-                    "apiVersion": "2015-03-01-preview",
-                    "dependsOn": [
-                      "[concat('Microsoft.HDInsight/clusters/',parameters('clusterName'))]"
-                    ],
-                    "properties": {
-                      "marketPlaceIdentifier": "EmptyNode",
-                      "computeProfile": {
-                        "roles": [
-                          {
-                            "name": "edgenode",
-                            "targetInstanceCount": 1,
-                            "hardwareProfile": {
-                              "vmSize": "Standard_D3_v2"
-                            }
-                          }
-                        ]
-                      },
-                      "installScriptActions": [
-                        {
-                          "name": "[concat('emptynode','-' ,uniquestring(variables('applicationName')))]",
-                          "uri": "[concat(parameters('_artifactsLocation'), '/', parameters('installScriptActionFolder'), '/', parameters('installScriptAction'), parameters('_artifactsLocationSasToken'))]",
-                          "roles": [
-                            "edgenode"
-                          ]
-                        }
-                      ],
-                      "uninstallScriptActions": [],
-                      "httpsEndpoints": [],
-                      "applicationType": "CustomApplication"
-                    }
-                  }
-                ]
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('vNet').name]",
+      "apiVersion": "2018-07-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('vNet').addressSpacePrefix]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('vNet').subnetName]",
+            "properties": {
+              "addressPrefix": "[variables('vNet').subnetPrefix]"
             }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('clusterStorageAccountName')]",
+      "apiVersion": "2018-02-01",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[variables('storageAccountType')]"
+      },
+      "kind": "Storage",
+      "properties": {}
+    },
+    {
+      "name": "[parameters('clusterName')]",
+      "type": "Microsoft.HDInsight/clusters",
+      "location": "[parameters('location')]",
+      "apiVersion": "2015-03-01-preview",
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/',variables('clusterStorageAccountName'))]",
+        "[concat('Microsoft.Network/virtualNetworks/',variables('vNet').name)]"
+      ],
+      "tags": {},
+      "properties": {
+        "clusterVersion": "3.6",
+        "osType": "Linux",
+        "clusterDefinition": {
+          "kind": "hbase",
+          "configurations": {
+            "gateway": {
+              "restAuthCredential.isEnabled": true,
+              "restAuthCredential.username": "[parameters('clusterLoginUserName')]",
+              "restAuthCredential.password": "[parameters('clusterLoginPassword')]"
+            }
+          }
+        },
+        "storageProfile": {
+          "storageaccounts": [
+            {
+              "name": "[replace(replace(reference(resourceId('Microsoft.Storage/storageAccounts', variables('clusterStorageAccountName')), '2016-01-01').primaryEndpoints.blob,'https://',''),'/','')]",
+              "isDefault": true,
+              "container": "[parameters('clusterName')]",
+              "key": "[listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('clusterStorageAccountName')), '2016-01-01').keys[0].value]"
+            }
+          ]
+        },
+        "computeProfile": {
+          "roles": [
+            {
+              "name": "headnode",
+              "targetInstanceCount": "2",
+              "hardwareProfile": {
+                "vmSize": "Standard_D3_v2"
+              },
+              "osProfile": {
+                "linuxOperatingSystemProfile": {
+                  "username": "[parameters('sshUserName')]",
+                  "password": "[parameters('sshPassword')]",
+                  "sshProfile": {
+                    "publicKeys": [
+                      {
+                        "certificateData": "[parameters('sshPublicKey')]"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "name": "workernode",
+              "targetInstanceCount": 2,
+              "hardwareProfile": {
+                "vmSize": "Standard_D3_v2"
+              },
+              "osProfile": {
+                "linuxOperatingSystemProfile": {
+                  "username": "[parameters('sshUserName')]",
+                  "password": "[parameters('sshPassword')]",
+                  "sshProfile": {
+                    "publicKeys": [
+                      {
+                        "certificateData": "[parameters('sshPublicKey')]"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "name": "zookeepernode",
+              "targetInstanceCount": 3,
+              "hardwareProfile": {
+                "vmSize": "Standard_A3"
+              },
+              "osProfile": {
+                "linuxOperatingSystemProfile": {
+                  "username": "[parameters('sshUserName')]",
+                  "password": "[parameters('sshPassword')]",
+                  "sshProfile": {
+                    "publicKeys": [
+                      {
+                        "certificateData": "[parameters('sshPublicKey')]"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          ]
         }
+      }
+    },
+    {
+      "name": "[concat(parameters('clusterName'),'/', variables('applicationName'))]",
+      "type": "Microsoft.HDInsight/clusters/applications",
+      "apiVersion": "2015-03-01-preview",
+      "dependsOn": [
+        "[concat('Microsoft.HDInsight/clusters/',parameters('clusterName'))]"
+      ],
+      "properties": {
+        "marketPlaceIdentifier": "EmptyNode",
+        "computeProfile": {
+          "roles": [
+            {
+              "name": "edgenode",
+              "targetInstanceCount": 1,
+              "hardwareProfile": {
+                "vmSize": "Standard_D3_v2"
+              }
+            }
+          ]
+        },
+        "installScriptActions": [
+          {
+            "name": "[concat('emptynode','-' ,uniquestring(variables('applicationName')))]",
+            "uri": "[concat(parameters('_artifactsLocation'), '/', parameters('installScriptActionFolder'), '/', parameters('installScriptAction'), parameters('_artifactsLocationSasToken'))]",
+            "roles": [
+              "edgenode"
+            ]
+          }
+        ],
+        "uninstallScriptActions": [],
+        "httpsEndpoints": [],
+        "applicationType": "CustomApplication"
+      }
     }
-],
+  ],
   "outputs": {
     "storage": {
       "type": "object",
