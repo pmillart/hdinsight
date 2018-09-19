@@ -249,22 +249,6 @@
               "targetInstanceCount": 1,
               "hardwareProfile": {
                 "vmSize": "Standard_D3_v2"
-              },"osProfile": {
-                "linuxOperatingSystemProfile": {
-                  "username": "[parameters('sshUserName')]",
-                  "password": "[parameters('sshPassword')]",
-                  "sshProfile": {
-                    "publicKeys": [
-                      {
-                        "certificateData": "[parameters('sshPublicKey')]"
-                      }
-                    ]
-                  }
-                }
-              },
-              "virtualNetworkProfile": {
-                "id": "[variables('vNet').id]",
-                "subnet": "[variables('vNet').subnet]"
               }
             }
           ]
